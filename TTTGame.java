@@ -2,6 +2,9 @@ import java.util.Scanner;
 
 public class TTTGame 
 {
+	//I feel we should use this for only board related methods whle protocol handles the players turns
+	
+	
 	//the variables we will need 
 	static boolean win  = false;
 	static String winner = "";
