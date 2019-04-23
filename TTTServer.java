@@ -1,57 +1,69 @@
-import java.net.*;
 import java.io.*;
-
-public class TTTServer 
+import java.net.*;
+import java.util.Scanner;
+public class TTTServer
 {
-    public static void main(String[] args) throws IOException {
-        
-        if (args.length != 1) {
-            System.err.println("Usage: java KnockKnockServer <port number>");
-            System.exit(1);
-        }
+    // take in client message, send out regular message
+    public static void main(String[] args) throws Exception{
+        //socket objects
+        ServerSocket serverSocket = new ServerSocket(4444);
+        Socket clientSocket = serverSocket.accept();
 
-        int portNumber = Integer.parseInt(args[0]);
+        //Object Streams needed to send interpret and send messages 
+        ObjectInputStream in = new ObjectInputStream(
+                clientSocket.getInputStream());
+        ObjectOutputStream out = new ObjectOutputStream(
+                clientSocket.getOutputStream());
 
-        try (
-            //Listen on specific port for a connection request 
-            ServerSocket serverSocket = new ServerSocket(portNumber);
-            
-            //Server accepts connection request
-            Socket clientSocket = serverSocket.accept();
-            
-            //Shows output to client 
-            PrintWriter out =
-                new PrintWriter(clientSocket.getOutputStream(), true);
-                
-            //Recieve input from client
-            BufferedReader in = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
-        ) {
+        //message objects 
+        Message fromServer;
+        Vector2 serverMove;
+        ClientMessage fromUser;
         
-            String inputLine, outputLine;
-            
-            // Initiate conversation with client
-            TTTProtocol ttt = new TTTProtocol();
-            outputLine = ttt.processInput(null);
-            
-            //Send initial message to client 
-            out.println(outputLine);
-            
-            //Receive response from client
-            while ((inputLine = in.readLine()) != null) {
-                //Determine server's reply
-                outputLine = ttt.processInput(inputLine);
-                //Sending server's reply to the client
-                out.println(outputLine);
-                
-                //Repeat steps until break condition 
-                if (outputLine.equals("Bye."))
-                    break;
+        Scanner scan = new Scanner(System.in);
+
+        GameBoard board = new GameBoard();
+        
+        //Specify symbols
+        String clientSymbol = GameBoard.O;
+        String serverSymbol = GameBoard.X;
+        
+        //Establish teams, followed by the first move
+        System.out.println("Server is X and Client is O!");
+        board.display();
+        System.out.println("Please make a move: ");
+        String input;       
+
+        do{
+            input = scan.nextLine();
+            serverMove = TTTProtocol.interpretServerInput(input);
+            if(serverMove == null){
+                System.out.print("Bad input, please try again: ");
             }
-        } catch (IOException e) {
-            System.out.println("Exception caught when trying to listen on port "
-                + portNumber + " or listening for a connection");
-            System.out.println(e.getMessage());
+        }while(serverMove == null);
+        
+        //apply move to the board
+        board.applyMove(serverMove,serverSymbol);
+        board.display();
+         
+        fromServer = new Message(serverMove.toString(), board);
+        out.writeObject(fromServer);
+        
+        while((fromUser = (ClientMessage)in.readObject()) != null) {
+            System.out.println(TTTProtocol.interpretClientMessage(fromUser,board,clientSymbol));
+            
+            if(fromUser.getMessage().equals("exit")){
+                break;
+            }
+            
+            //check the board for a done game(check the state of the board)
+            
+            //if done, figure out what to do, otherwise make a move, and send it over
+            
+            //being here means that we need to make a move
+            
         }
+        clientSocket.close();
+        serverSocket.close();
     }
 }

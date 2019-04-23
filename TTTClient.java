@@ -1,55 +1,56 @@
-import java.net.*;
 import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+public class TTTClient {
+    public static void main(String[] args) throws Exception {
 
-public class TTTClient 
-{
-    public static void main(String[] args) throws IOException {
+        String hostName = "localhost";
+        int portNumber = 4444;
+
+        //Initiate a connection request to server's IPaddress, port 
+        Socket clientSocket = new Socket(hostName, portNumber);
+        //Object Streams needed to send interpret and send messages 
+        ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+        ObjectInputStream in = new ObjectInputStream(
+                clientSocket.getInputStream());
+
+        //these will be the objects
+        Message fromServer;
+        ClientMessage fromUser;
         
-        if (args.length != 2) {
-            System.err.println(
-                "Usage: java EchoClient <host name> <port number>");
-            System.exit(1);
-        }
-
-        String hostName = args[0];
-        int portNumber = Integer.parseInt(args[1]);
-
-        try (
-            //Initiate a connection request to server's IPaddress, port 
-            Socket tttSocket = new Socket(hostName, portNumber);
-            PrintWriter out = new PrintWriter(tttSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(
-                new InputStreamReader(tttSocket.getInputStream()));
-        ) {
-            BufferedReader stdIn =
-                new BufferedReader(new InputStreamReader(System.in));
-            String fromServer;
-            String fromUser;
+        Scanner scan = new Scanner(System.in);
+        
+        //Receive message for server
+        while ((fromServer = (Message)in.readObject()) != null) {
+            //interpret the incoming message
+            String results = TTTProtocol.interpretMessage(fromServer);
             
-            //Receive message for server
-            while ((fromServer = in.readLine()) != null) {
-                //Print message from server
-                System.out.println("Server: " + fromServer);
-                
-                //Repeat steps until break condition 
-                if (fromServer.equals("Bye."))
-                    break;
-                
-                //Read message from client 
-                fromUser = stdIn.readLine();
-                if (fromUser != null) {
-                    System.out.println("Client: " + fromUser);
-                    //Send response to server 
-                    out.println(fromUser);
+            //display results of interpretation
+            System.out.println(results);
+            
+            System.out.print("Please make a move: ");
+            //wait on user input
+            do{
+                String move = scan.nextLine();
+                fromUser = TTTProtocol.interpretClientInput(move);
+                if(fromUser == null){
+                    System.out.print("Bad input, please try again: ");
                 }
+            }while(fromUser == null);
+            
+            //getting here means that the move was successfully instantiated
+            
+            //create a message from the input
+            //send the message over
+            out.writeObject(fromUser);
+               
+            //if the message is exit, then break out of the loop
+            if(fromUser.getMessage().equals("exit")){
+                break;
             }
-        } catch (UnknownHostException e) {
-            System.err.println("Don't know about host " + hostName);
-            System.exit(1);
-        } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to " +
-                hostName);
-            System.exit(1);
+            
         }
+        
+        clientSocket.close();
     }
 }
