@@ -3,10 +3,10 @@
  * 
  * NOTE that this class is designed to be used in a tree, and moves will not be written
  * to the tree unless there is no move in the tree with the same x and y.
- * @author Michael Pascale
+ * @author Michael Pascale, Modified by Sean Santorufo
  * @version 31 Jan 2019
  */
-public class Vector2 implements Comparable<Vector2>{
+public class Vector2 implements Comparable<Vector2>, java.io.Serializable{
     //two pieces of data being stored
     private int x, y;
 

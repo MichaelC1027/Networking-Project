@@ -3,7 +3,7 @@ import java.net.*;
 import java.util.Scanner;
 public class TTTClient {
     public static void main(String[] args) throws Exception {
-
+        //create port and host
         String hostName = "localhost";
         int portNumber = 4444;
 
@@ -17,40 +17,53 @@ public class TTTClient {
         //these will be the objects
         Message fromServer;
         ClientMessage fromUser;
-        
+
         Scanner scan = new Scanner(System.in);
-        
+
         //Receive message for server
         while ((fromServer = (Message)in.readObject()) != null) {
             //interpret the incoming message
             String results = TTTProtocol.interpretMessage(fromServer);
-            
+
             //display results of interpretation
             System.out.println(results);
-            
-            System.out.print("Please make a move: ");
-            //wait on user input
-            do{
-                String move = scan.nextLine();
-                fromUser = TTTProtocol.interpretClientInput(move);
-                if(fromUser == null){
-                    System.out.print("Bad input, please try again: ");
+
+            if(results.equals(TTTProtocol.notValid)){
+                System.out.print("Bad input, please try again: ");
+                //wait on user input
+                do{
+                    String move = scan.nextLine();
+                    fromUser = TTTProtocol.interpretClientInput(move);
+                    if(fromUser == null || !move.matches("[1-3],[1-3]")){
+                        System.out.print("Bad input, please try again: ");
+                    }
+                }while(fromUser == null);
+
+                out.writeObject(fromUser);
+            }else{
+                //move making prompt
+                System.out.print("Please make a move: ");
+
+                //wait on user input
+                do{
+                    String move = scan.nextLine();
+                    fromUser = TTTProtocol.interpretClientInput(move);
+                    if(fromUser == null || !move.matches("[1-3],[1-3]")){
+                        System.out.print("Bad input, please try again: ");
+                    }
+                }while(fromUser == null);
+                //getting here means that the move was successfully instantiated
+
+                //create a message from the input
+                //send the message over
+                out.writeObject(fromUser);
+
+                //if the message is exit, then break out of the loop
+                if(fromUser.getMessage().equals("exit")){
+                    break;
                 }
-            }while(fromUser == null);
-            
-            //getting here means that the move was successfully instantiated
-            
-            //create a message from the input
-            //send the message over
-            out.writeObject(fromUser);
-               
-            //if the message is exit, then break out of the loop
-            if(fromUser.getMessage().equals("exit")){
-                break;
             }
-            
         }
-        
         clientSocket.close();
     }
 }

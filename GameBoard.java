@@ -3,10 +3,10 @@ import java.util.Arrays;
  * Stores a 2d array of strings which is the game board
  * detects wins
  * 
- * @author Michael Pascale
+ * @author Michael Pascale, Modified by Sean Santorufo
  * @version 5 Feb 2019
  */
-public class GameBoard{
+public class GameBoard implements java.io.Serializable{
     public static final String EMPTY = "_";
     public static final String X = "X";
     public static final String O = "O";
@@ -74,9 +74,7 @@ public class GameBoard{
         }else{
             return GameBoard.BAD_INPUT;
         }
-        
-        
-        
+                
         //check for win condition
         //vertical
         for(int i = 0; i < board.length;i++){
@@ -112,10 +110,16 @@ public class GameBoard{
         return GameBoard.CONTINUE;
     }
     
-    /**
-     * getGrid - returns a copy of the grid it has internally
-     */
-    public String[][] getGrid(){
-        return Arrays.copyOf(this.board, this.board.length);
+    public GameBoard copyBoard(){
+        GameBoard theBoard = new GameBoard();
+        for(int i = 0; i < theBoard.board.length; i++){
+            for(int j = 0; j < theBoard.board[i].length;j++){
+                theBoard.board[i][j] = this.board[i][j];
+            }
+        }
+        
+        theBoard.moveCount = this.moveCount;
+        
+        return theBoard;
     }
 }
